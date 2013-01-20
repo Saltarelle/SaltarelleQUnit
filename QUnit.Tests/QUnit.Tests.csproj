@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BC16FB75-7948-4B85-A082-8AF1FB927CE0}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>QUnit.Tests</RootNamespace>
+    <AssemblyName>QUnit.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Antlr3.Runtime">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\Antlr3.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Castle.Core">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\Castle.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Castle.Windsor">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\Castle.Windsor.dll</HintPath>
+    </Reference>
+    <Reference Include="CoreLib.Plugin">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\CoreLib.Plugin.dll</HintPath>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\ICSharpCode.NRefactory.dll</HintPath>
+    </Reference>
+    <Reference Include="ICSharpCode.NRefactory.CSharp">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\ICSharpCode.NRefactory.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="JavaScriptParser">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\JavaScriptParser.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.2\lib\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Saltarelle.Compiler">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\Saltarelle.Compiler.dll</HintPath>
+    </Reference>
+    <Reference Include="Saltarelle.Compiler.JSModel">
+      <HintPath>..\packages\Saltarelle.Compiler.ExtensibilityDevelopment.1.7.1.26\lib\Saltarelle.Compiler.JSModel.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <Link>Properties\CommonAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="MockErrorReporter.cs" />
+    <Compile Include="MockSourceFile.cs" />
+    <Compile Include="TestRewriterTests.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\QUnit.Plugin\QUnit.Plugin.csproj">
+      <Project>{e23a7d8c-b41f-45a5-973c-9a2e1f4b88b5}</Project>
+      <Name>QUnit.Plugin</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\QUnit\QUnit.csproj">
+      <Project>{278d9898-ef61-4ccd-a6ac-5f7f31a024a4}</Project>
+      <Name>QUnit</Name>
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\QUnit\bin\mscorlib.dll">
+      <Link>mscorlib.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\QUnit\bin\Saltarelle.QUnit.dll">
+      <Link>Saltarelle.QUnit.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
