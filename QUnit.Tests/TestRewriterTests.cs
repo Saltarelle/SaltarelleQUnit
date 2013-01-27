@@ -5,13 +5,14 @@ using CoreLib.Plugin;
 using ICSharpCode.NRefactory.TypeSystem;
 using NUnit.Framework;
 using QUnit.Plugin;
+using Saltarelle.Compiler;
 using Saltarelle.Compiler.Compiler;
 using Saltarelle.Compiler.JSModel;
 using Saltarelle.Compiler.JSModel.TypeSystem;
 
 namespace QUnit.Tests {
 	[NUnit.Framework.TestFixture]
-    public class TestRewriterTests {
+	public class TestRewriterTests {
 		public static readonly string MscorlibPath = Path.GetFullPath("mscorlib.dll");
 		private static readonly Lazy<IAssemblyReference> _mscorlibLazy = new Lazy<IAssemblyReference>(() => new CecilLoader() { IncludeInternalMembers = true }.LoadAssemblyFile(MscorlibPath));
 		internal static IAssemblyReference Mscorlib { get { return _mscorlibLazy.Value; } }
@@ -22,18 +23,18 @@ namespace QUnit.Tests {
 
 		private Tuple<JsClass, MockErrorReporter> Compile(string source, bool expectErrors = false) {
 			var sourceFile = new MockSourceFile("file.cs", source);
-            var er = new MockErrorReporter(!expectErrors);
-			var md = new MetadataImporter(er);
+			var er = new MockErrorReporter(!expectErrors);
 			var n = new DefaultNamer();
-            var references = new[] { Mscorlib, QUnit };
+			var references = new[] { Mscorlib, QUnit };
 			var compilation = PreparedCompilation.CreateCompilation(new[] { sourceFile }, references, null);
-			var rtl = new RuntimeLibrary(md, er, n, compilation.Compilation);
-			md.Prepare(compilation.Compilation.GetAllTypeDefinitions(), false, compilation.Compilation.MainAssembly);
-            var compiler = new Compiler(md, n, rtl, er);
+			var md = new MetadataImporter(er, compilation.Compilation, new CompilerOptions());
+			var rtl = new RuntimeLibrary(md, er, compilation.Compilation);
+			md.Prepare(compilation.Compilation.GetAllTypeDefinitions());
+			var compiler = new Compiler(md, n, rtl, er);
 
 			var result = compiler.Compile(compilation).ToList();
 			Assert.That(result, Has.Count.EqualTo(1), "Should compile exactly one type");
-            Assert.That(er.AllMessages, Is.Empty, "Compile should not generate errors");
+			Assert.That(er.AllMessages, Is.Empty, "Compile should not generate errors");
 
 			result = new TestRewriter(er, rtl).Rewrite(result).ToList();
 			Assert.That(result, Has.Count.EqualTo(1), "Should have one type after rewrite");
@@ -128,13 +129,13 @@ public class MyClass {
 
 		AssertEqual(
 @"function() {
-	test('TestMethod', {Delegate}.mkdel(this, function() {
+	test('TestMethod', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
-	asyncTest('AsyncTestMethod', {Delegate}.mkdel(this, function() {
+	asyncTest('AsyncTestMethod', {Script}.mkdel(this, function() {
 		var x2 = 0;
 	}));
-	test('TestMethodWithAssertionCount', 3, {Delegate}.mkdel(this, function() {
+	test('TestMethodWithAssertionCount', 3, {Script}.mkdel(this, function() {
 		var x3 = 0;
 	}));
 }", OutputFormatter.Format(type.Item1.InstanceMethods.Single(m => m.Name == "runTests").Definition, allowIntermediates: true));
@@ -178,24 +179,24 @@ public class MyClass {
 	}
 }",
 @"function() {
-	test('Test1', {Delegate}.mkdel(this, function() {
+	test('Test1', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
-	test('Test4', {Delegate}.mkdel(this, function() {
+	test('Test4', {Script}.mkdel(this, function() {
 		var x4 = 0;
 	}));
 	module('Category1');
-	test('Test2', {Delegate}.mkdel(this, function() {
+	test('Test2', {Script}.mkdel(this, function() {
 		var x2 = 0;
 	}));
-	test('Test5', {Delegate}.mkdel(this, function() {
+	test('Test5', {Script}.mkdel(this, function() {
 		var x5 = 0;
 	}));
 	module('Category2');
-	test('Test3', {Delegate}.mkdel(this, function() {
+	test('Test3', {Script}.mkdel(this, function() {
 		var x3 = 0;
 	}));
-	test('Test6', {Delegate}.mkdel(this, function() {
+	test('Test6', {Script}.mkdel(this, function() {
 		var x6 = 0;
 	}));
 }");
@@ -214,7 +215,7 @@ public class MyClass {
 	}
 }",
 @"function() {
-	test('Test1', {Delegate}.mkdel(this, function() {
+	test('Test1', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
 }");
@@ -233,7 +234,7 @@ public class MyClass {
 	}
 }",
 @"function() {
-	test('Some description', {Delegate}.mkdel(this, function() {
+	test('Some description', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
 }");
@@ -253,7 +254,7 @@ public class MyClass {
 }",
 @"function() {
 	module('Some category');
-	test('Test1', {Delegate}.mkdel(this, function() {
+	test('Test1', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
 }");
@@ -272,7 +273,7 @@ public class MyClass {
 	}
 }",
 @"function() {
-	test('Test1', 3, {Delegate}.mkdel(this, function() {
+	test('Test1', 3, {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
 }");
@@ -291,7 +292,7 @@ public class MyClass {
 	}
 }",
 @"function() {
-	asyncTest('Test1', {Delegate}.mkdel(this, function() {
+	asyncTest('Test1', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
 }");
