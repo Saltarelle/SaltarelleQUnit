@@ -59,6 +59,7 @@ Task Build-NuGetPackages -Depends Determine-Version, Run-Tests {
 	</metadata>
 	<files>
 		<file src="$baseDir\License.txt" target=""/>
+		<file src="$baseDir\history.txt" target=""/>
 		<file src="$baseDir\QUnit\bin\Saltarelle.QUnit.dll" target="lib"/>
 		<file src="$baseDir\QUnit\bin\Saltarelle.QUnit.xml" target="lib"/>
 		<file src="$baseDir\QUnit\qunit-*.js" target=""/>
