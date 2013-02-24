@@ -185,14 +185,14 @@ public class MyClass {
 	test('Test4', {Script}.mkdel(this, function() {
 		var x4 = 0;
 	}));
-	module('Category1');
+	QUnit.module('Category1');
 	test('Test2', {Script}.mkdel(this, function() {
 		var x2 = 0;
 	}));
 	test('Test5', {Script}.mkdel(this, function() {
 		var x5 = 0;
 	}));
-	module('Category2');
+	QUnit.module('Category2');
 	test('Test3', {Script}.mkdel(this, function() {
 		var x3 = 0;
 	}));
@@ -253,7 +253,7 @@ public class MyClass {
 	}
 }",
 @"function() {
-	module('Some category');
+	QUnit.module('Some category');
 	test('Test1', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
