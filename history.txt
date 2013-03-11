@@ -1,3 +1,4 @@
+Work with compiler 2.1.0
 Generate QUnit.module() instead of module() for Node.js compatibility
 
 1.9.0
