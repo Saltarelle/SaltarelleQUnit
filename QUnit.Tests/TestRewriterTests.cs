@@ -24,11 +24,11 @@ namespace QUnit.Tests {
 		private Tuple<JsClass, MockErrorReporter> Compile(string source, bool expectErrors = false) {
 			var sourceFile = new MockSourceFile("file.cs", source);
 			var er = new MockErrorReporter(!expectErrors);
-			var n = new DefaultNamer();
+			var n = new Namer();
 			var references = new[] { Mscorlib, QUnit };
 			var compilation = PreparedCompilation.CreateCompilation(new[] { sourceFile }, references, null);
 			var md = new MetadataImporter(er, compilation.Compilation, new CompilerOptions());
-			var rtl = new RuntimeLibrary(md, er, compilation.Compilation);
+			var rtl = new RuntimeLibrary(md, er, compilation.Compilation, n);
 			md.Prepare(compilation.Compilation.GetAllTypeDefinitions());
 			var compiler = new Compiler(md, n, rtl, er);
 
@@ -185,14 +185,14 @@ public class MyClass {
 	test('Test4', {Script}.mkdel(this, function() {
 		var x4 = 0;
 	}));
-	module('Category1');
+	QUnit.module('Category1');
 	test('Test2', {Script}.mkdel(this, function() {
 		var x2 = 0;
 	}));
 	test('Test5', {Script}.mkdel(this, function() {
 		var x5 = 0;
 	}));
-	module('Category2');
+	QUnit.module('Category2');
 	test('Test3', {Script}.mkdel(this, function() {
 		var x3 = 0;
 	}));
@@ -253,7 +253,7 @@ public class MyClass {
 	}
 }",
 @"function() {
-	module('Some category');
+	QUnit.module('Some category');
 	test('Test1', {Script}.mkdel(this, function() {
 		var x1 = 0;
 	}));
