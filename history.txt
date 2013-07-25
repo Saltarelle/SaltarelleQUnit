@@ -1,3 +1,5 @@
+Added methods Assert.IsNull, Assert.IsNotNull and Assert.IsNullOrUndefined.
+
 1.9.2
 Work with compiler 2.2.0
 
