@@ -1,3 +1,4 @@
+Added some Assert.Throws overloads.
 Added methods Assert.IsNull, Assert.IsNotNull and Assert.IsNullOrUndefined.
 
 1.9.2
