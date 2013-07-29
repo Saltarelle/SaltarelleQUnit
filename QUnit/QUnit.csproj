@@ -47,7 +47,15 @@
     <Compile Include="..\CommonAssemblyInfo.cs">
       <Link>Properties\CommonAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="DoneDetails.cs" />
+    <Compile Include="LogDetails.cs" />
+    <Compile Include="ModuleDoneDetails.cs" />
+    <Compile Include="ModuleStartDetails.cs" />
     <Compile Include="Properties\Version.cs" />
+    <Compile Include="QUnitConfig.cs" />
+    <Compile Include="TestDoneDetails.cs" />
+    <Compile Include="TestStartDetails.cs" />
+    <Compile Include="UrlConfig.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assert.cs" />
