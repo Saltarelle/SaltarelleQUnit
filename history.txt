@@ -1,3 +1,4 @@
+Work with compiler 2.3.0
 Added some Assert.Throws overloads.
 Added methods Assert.IsNull, Assert.IsNotNull and Assert.IsNullOrUndefined.
 
