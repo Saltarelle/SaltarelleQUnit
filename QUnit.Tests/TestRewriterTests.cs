@@ -14,11 +14,11 @@ namespace QUnit.Tests {
 	[NUnit.Framework.TestFixture]
 	public class TestRewriterTests {
 		public static readonly string MscorlibPath = Path.GetFullPath("mscorlib.dll");
-		private static readonly Lazy<IAssemblyReference> _mscorlibLazy = new Lazy<IAssemblyReference>(() => new CecilLoader() { IncludeInternalMembers = true }.LoadAssemblyFile(MscorlibPath));
+		private static readonly Lazy<IAssemblyReference> _mscorlibLazy = new Lazy<IAssemblyReference>(() => new IkvmLoader() { IncludeInternalMembers = true }.LoadAssemblyFile(MscorlibPath));
 		internal static IAssemblyReference Mscorlib { get { return _mscorlibLazy.Value; } }
 
 		public static readonly string QUnitPath = Path.GetFullPath("Saltarelle.QUnit.dll");
-		private static readonly Lazy<IAssemblyReference> _qunitLazy = new Lazy<IAssemblyReference>(() => new CecilLoader() { IncludeInternalMembers = true }.LoadAssemblyFile(QUnitPath));
+		private static readonly Lazy<IAssemblyReference> _qunitLazy = new Lazy<IAssemblyReference>(() => new IkvmLoader() { IncludeInternalMembers = true }.LoadAssemblyFile(QUnitPath));
 		internal static IAssemblyReference QUnit { get { return _qunitLazy.Value; } }
 
 		private Tuple<JsClass, MockErrorReporter> Compile(string source, bool expectErrors = false) {
