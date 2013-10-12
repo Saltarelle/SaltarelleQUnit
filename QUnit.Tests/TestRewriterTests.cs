@@ -26,7 +26,7 @@ namespace QUnit.Tests {
 			var er = new MockErrorReporter(!expectErrors);
 			var n = new Namer();
 			var references = new[] { Mscorlib, QUnit };
-			var compilation = PreparedCompilation.CreateCompilation(new[] { sourceFile }, references, null);
+			var compilation = PreparedCompilation.CreateCompilation("Test", new[] { sourceFile }, references, null);
 			var md = new MetadataImporter(er, compilation.Compilation, new CompilerOptions());
 			var rtl = new RuntimeLibrary(md, er, compilation.Compilation, n);
 			md.Prepare(compilation.Compilation.GetAllTypeDefinitions());
