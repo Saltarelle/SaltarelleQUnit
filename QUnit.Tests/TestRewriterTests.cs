@@ -27,8 +27,10 @@ namespace QUnit.Tests {
 			var n = new Namer();
 			var references = new[] { Mscorlib, QUnit };
 			var compilation = PreparedCompilation.CreateCompilation("Test", new[] { sourceFile }, references, null);
-			var md = new MetadataImporter(er, compilation.Compilation, new CompilerOptions());
-			var rtl = new RuntimeLibrary(md, er, compilation.Compilation, n);
+			var s = new AttributeStore(compilation.Compilation, er);
+			s.RunAttributeCode();
+			var md = new MetadataImporter(er, compilation.Compilation, s, new CompilerOptions());
+			var rtl = new RuntimeLibrary(md, er, compilation.Compilation, n, s);
 			md.Prepare(compilation.Compilation.GetAllTypeDefinitions());
 			var compiler = new Compiler(md, n, rtl, er);
 
@@ -36,7 +38,7 @@ namespace QUnit.Tests {
 			Assert.That(result, Has.Count.EqualTo(1), "Should compile exactly one type");
 			Assert.That(er.AllMessages, Is.Empty, "Compile should not generate errors");
 
-			result = new TestRewriter(er, rtl).Rewrite(result).ToList();
+			result = new TestRewriter(er, rtl, s).Rewrite(result).ToList();
 			Assert.That(result, Has.Count.EqualTo(1), "Should have one type after rewrite");
 			Assert.That(result[0], Is.InstanceOf<JsClass>(), "Compiled type should be a class after rewrite");
 
