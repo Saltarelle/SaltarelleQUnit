@@ -111,16 +111,16 @@ namespace QUnit.Plugin {
 		private JsExpression ProduceAsyncTaskTestInvocation(TestData t)
 		{
 			var continueWithClause = JsExpression.Invocation(
-								JsExpression.Member(JsExpression.Invocation(JsExpression.Identifier("m")), "continueWith"), 
-								JsExpression.FunctionDefinition(new string [] {"t" }, JsExpressionStatement.Block(
-									JsExpressionStatement.If(JsExpression.Invocation(JsExpression.Member(JsExpression.Identifier("t"), "isFaulted")), 
-										JsExpression.Invocation(JsExpression.Identifier("ok"), 
-											JsExpression.Boolean(false),
-											JsExpression.Add(
-												JsExpression.String("Exception thrown in test: "), 
-												JsExpression.Invocation(JsExpression.Member(JsExpression.Invocation(JsExpression.Member(JsExpression.Member(JsExpression.Identifier("t"), "exception"), "get_innerException")), "get_message")))),
-												null),
-									JsExpression.Invocation(JsExpression.Member(JsExpression.Identifier("QUnit"), "start")))));
+				JsExpression.Member(JsExpression.Invocation(JsExpression.Identifier("m")), "continueWith"), 
+				JsExpression.FunctionDefinition(new string [] {"t" }, JsExpressionStatement.Block(
+					JsExpressionStatement.If(JsExpression.Invocation(JsExpression.Member(JsExpression.Identifier("t"), "isFaulted")), 
+						JsExpression.Invocation(JsExpression.Identifier("ok"), 
+							JsExpression.Boolean(false),
+							JsExpression.Add(
+								JsExpression.String("Exception thrown in test: "), 
+								JsExpression.Invocation(JsExpression.Member(JsExpression.Invocation(JsExpression.Member(JsExpression.Member(JsExpression.Identifier("t"), "exception"), "get_innerException")), "get_message")))),
+								null),
+					JsExpression.Invocation(JsExpression.Member(JsExpression.Identifier("QUnit"), "start")))));
 
 			return JsExpression.Invocation(
 				JsExpression.Identifier("asyncTest"),
