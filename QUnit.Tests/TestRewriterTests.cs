@@ -324,5 +324,66 @@ public class C1 {
 				Assert.That(res.Item2.AllMessages.Any(m => m.Code == 7020));
 			}
 		}
-    }
+
+		[NUnit.Framework.Test]
+		public void TestReturningTaskWithAllDefaultValuesWorks()
+		{
+			AssertCorrect(@"
+using QUnit;
+using System.Threading.Tasks;
+
+[TestFixture]
+public class MyClass {
+	[Test]
+	public Task Test1() {
+		return Task.Delay(200);
+	}
+}",
+@"function() {
+	asyncTest('Test1', (function(m) {
+		return function() {
+			m().continueWith(function(t) {
+				if (t.isFaulted()) {
+					ok(false, 'Exception thrown in test: ' + t.exception.get_innerException().get_message());
+				}
+				QUnit.start();
+			});
+		};
+	})({Script}.mkdel(this, function() {
+		return {Task}.delay(200);
+	})));
+}");
+		}
+
+		[NUnit.Framework.Test]
+		public void TestReturningTaskSupportsExpectedAssertionCount()
+		{
+			AssertCorrect(@"
+using QUnit;
+using System.Threading.Tasks;
+
+[TestFixture]
+public class MyClass {
+	[Test(ExpectedAssertionCount = 3)]
+	public Task Test1() {
+		return Task.Delay(200);
+	}
+}",
+@"function() {
+	asyncTest('Test1', (function(m) {
+		return function() {
+			expect(3);
+			m().continueWith(function(t) {
+				if (t.isFaulted()) {
+					ok(false, 'Exception thrown in test: ' + t.exception.get_innerException().get_message());
+				}
+				QUnit.start();
+			});
+		};
+	})({Script}.mkdel(this, function() {
+		return {Task}.delay(200);
+	})));
+}");
+		}
+	}
 }
