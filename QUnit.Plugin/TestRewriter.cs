@@ -25,6 +25,17 @@ namespace QUnit.Plugin {
 			public static readonly DummyRuntimeContext Instance = new DummyRuntimeContext();
 		}
 
+		private class TestData
+		{
+			public string Description { get; set; }
+			public string Category { get; set; }
+			public bool IsAsync { get; set; }
+			public bool TaskMethod { get; set; }
+			public int? ExpectedAssertionCount { get; set; }
+			public JsFunctionDefinitionExpression Function { get; set; }
+			
+		}
+
 		private readonly IErrorReporter _errorReporter;
 		private readonly IRuntimeLibrary _runtimeLibrary;
 		private readonly IAttributeStore _attributeStore;
@@ -43,17 +54,28 @@ namespace QUnit.Plugin {
 			}
 
 			var instanceMethods = new List<JsMethod>();
-			var tests = new List<Tuple<string, string, bool, int?, JsFunctionDefinitionExpression>>();
+			var tests = new List<TestData>();
 
 			foreach (var method in type.InstanceMethods) {
 				var testAttr = _attributeStore.AttributesFor(method.CSharpMember).GetAttribute<TestAttribute>();
 				if (testAttr != null) {
-					if (!method.CSharpMember.IsPublic || !method.CSharpMember.ReturnType.IsKnownType(KnownTypeCode.Void) || ((IMethod)method.CSharpMember).Parameters.Count > 0 || ((IMethod)method.CSharpMember).TypeParameters.Count > 0) {
+
+					var returnType = method.CSharpMember.ReturnType;
+					if (!method.CSharpMember.IsPublic || (!returnType.IsKnownType(KnownTypeCode.Void) && !returnType.IsKnownType(KnownTypeCode.Task))
+						|| ((IMethod)method.CSharpMember).Parameters.Count > 0 || ((IMethod)method.CSharpMember).TypeParameters.Count > 0) {
 						_errorReporter.Region = method.CSharpMember.Region;
 						_errorReporter.Message(MessageSeverity.Error, 7020, string.Format("Method {0}: Methods decorated with a [TestAttribute] must be public, non-generic, parameterless instance methods that return void.", method.CSharpMember.FullName));
 					}
 
-					tests.Add(Tuple.Create(testAttr.Description ?? method.CSharpMember.Name, testAttr.Category, testAttr.IsAsync, testAttr.ExpectedAssertionCount >= 0 ? (int?)testAttr.ExpectedAssertionCount : null, method.Definition));
+					tests.Add(new TestData()
+						{
+							Description = testAttr.Description ?? method.CSharpMember.Name, 
+							Category = testAttr.Category, 
+							IsAsync = testAttr.IsAsync, 
+							TaskMethod = returnType.IsKnownType(KnownTypeCode.Task),
+							ExpectedAssertionCount = testAttr.ExpectedAssertionCount >= 0 ? (int?)testAttr.ExpectedAssertionCount : null, 
+							Function = method.Definition
+						});
 				}
 				else
 					instanceMethods.Add(method);
@@ -61,10 +83,20 @@ namespace QUnit.Plugin {
 
 			var testInvocations = new List<JsExpression>();
 
-			foreach (var category in tests.GroupBy(t => t.Item2).Select(g => new { Category = g.Key, Tests = g.Select(x => new { Description = x.Item1, IsAsync = x.Item3, ExpectedAssertionCount = x.Item4, Function = x.Item5 }) }).OrderBy(x => x.Category)) {
+			foreach (var category in tests.GroupBy(t => t.Category).Select(g => new { Category = g.Key, Tests = g}).OrderBy(x => x.Category)) {
 				if (category.Category != null)
 					testInvocations.Add(JsExpression.Invocation(JsExpression.Member(JsExpression.Identifier("QUnit"), "module"), JsExpression.String(category.Category)));
-				testInvocations.AddRange(category.Tests.Select(t => JsExpression.Invocation(JsExpression.Identifier(t.IsAsync ? "asyncTest" : "test"), t.ExpectedAssertionCount != null ? new JsExpression[] { JsExpression.String(t.Description), JsExpression.Number(t.ExpectedAssertionCount.Value), _runtimeLibrary.Bind(t.Function, JsExpression.This, DummyRuntimeContext.Instance) } : new JsExpression[] { JsExpression.String(t.Description), _runtimeLibrary.Bind(t.Function, JsExpression.This, DummyRuntimeContext.Instance) })));
+				testInvocations.AddRange(category.Tests.Select(t => 
+					t.TaskMethod ? ProduceAsyncTaskTestInvocation(t) :
+					JsExpression.Invocation(JsExpression.Identifier(t.IsAsync ? "asyncTest" : "test"), 
+						t.ExpectedAssertionCount != null ? new JsExpression[] { 
+							JsExpression.String(t.Description), 
+							JsExpression.Number(t.ExpectedAssertionCount.Value), 
+							_runtimeLibrary.Bind(t.Function, JsExpression.This, DummyRuntimeContext.Instance) 
+						} : new JsExpression[] { 
+							JsExpression.String(t.Description), 
+							_runtimeLibrary.Bind(t.Function, JsExpression.This, DummyRuntimeContext.Instance) 
+						})));
 			}
 
 			instanceMethods.Add(new JsMethod(null, "runTests", null, JsExpression.FunctionDefinition(new string[0], JsStatement.Block(testInvocations.Select(t => (JsStatement)t)))));
@@ -74,6 +106,39 @@ namespace QUnit.Plugin {
 			foreach (var m in instanceMethods)
 				result.InstanceMethods.Add(m);
 			return result;
+		}
+
+		private JsExpression ProduceAsyncTaskTestInvocation(TestData t)
+		{
+			var continueWithClause = JsExpression.Invocation(
+				JsExpression.Member(JsExpression.Invocation(JsExpression.Identifier("m")), "continueWith"), 
+				JsExpression.FunctionDefinition(new string [] {"t" }, JsExpressionStatement.Block(
+					JsExpressionStatement.If(JsExpression.Invocation(JsExpression.Member(JsExpression.Identifier("t"), "isFaulted")), 
+						JsExpression.Invocation(JsExpression.Identifier("ok"), 
+							JsExpression.Boolean(false),
+							JsExpression.Add(
+								JsExpression.String("Exception thrown in test: "), 
+								JsExpression.Invocation(JsExpression.Member(JsExpression.Invocation(JsExpression.Member(JsExpression.Member(JsExpression.Identifier("t"), "exception"), "get_innerException")), "get_message")))),
+								null),
+					JsExpression.Invocation(JsExpression.Member(JsExpression.Identifier("QUnit"), "start")))));
+
+			return JsExpression.Invocation(
+				JsExpression.Identifier("asyncTest"),
+				new JsExpression[] {
+					JsExpression.String(t.Description),
+					JsExpression.Invocation(
+						JsExpression.FunctionDefinition(
+							new string[] { "m" },
+							JsExpressionStatement.Return(
+								JsExpression.FunctionDefinition(
+								new string[0], 
+								t.ExpectedAssertionCount.HasValue ? 
+									(JsStatement)JsExpressionStatement.Block(
+										JsExpression.Invocation(JsExpression.Identifier("expect"), JsExpression.Number(t.ExpectedAssertionCount.Value)),
+										continueWithClause) :
+									(JsStatement)continueWithClause))),
+						_runtimeLibrary.Bind(t.Function, JsExpression.This, DummyRuntimeContext.Instance))
+				});
 		}
 
 		public IEnumerable<JsType> Rewrite(IEnumerable<JsType> types) {
