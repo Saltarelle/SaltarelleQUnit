@@ -1,37 +1,48 @@
 ﻿using System;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using CoreLib.Plugin;
-using ICSharpCode.NRefactory.TypeSystem;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using NUnit.Framework;
 using QUnit.Plugin;
 using Saltarelle.Compiler;
 using Saltarelle.Compiler.Compiler;
 using Saltarelle.Compiler.JSModel;
 using Saltarelle.Compiler.JSModel.TypeSystem;
+using Saltarelle.Compiler.Roslyn;
 
 namespace QUnit.Tests {
 	[NUnit.Framework.TestFixture]
 	public class TestRewriterTests {
 		public static readonly string MscorlibPath = Path.GetFullPath("mscorlib.dll");
-		private static readonly Lazy<IAssemblyReference> _mscorlibLazy = new Lazy<IAssemblyReference>(() => new IkvmLoader() { IncludeInternalMembers = true }.LoadAssemblyFile(MscorlibPath));
-		internal static IAssemblyReference Mscorlib { get { return _mscorlibLazy.Value; } }
+		private static readonly Lazy<MetadataReference> _mscorlibLazy = new Lazy<MetadataReference>(() => new MetadataFileReference(MscorlibPath));
+		internal static MetadataReference Mscorlib { get { return _mscorlibLazy.Value; } }
 
 		public static readonly string QUnitPath = Path.GetFullPath("Saltarelle.QUnit.dll");
-		private static readonly Lazy<IAssemblyReference> _qunitLazy = new Lazy<IAssemblyReference>(() => new IkvmLoader() { IncludeInternalMembers = true }.LoadAssemblyFile(QUnitPath));
-		internal static IAssemblyReference QUnit { get { return _qunitLazy.Value; } }
+		private static readonly Lazy<MetadataReference> _qunitLazy = new Lazy<MetadataReference>(() => new MetadataFileReference(QUnitPath));
+		internal static MetadataReference QUnit { get { return _qunitLazy.Value; } }
+
+		private static CSharpCompilation CreateCompilation(string source) {
+			var references = new[] { Mscorlib, QUnit };
+			var defineConstantsArr = ImmutableArray<string>.Empty;
+			var syntaxTree = SyntaxFactory.ParseSyntaxTree(source, new CSharpParseOptions(LanguageVersion.CSharp5, DocumentationMode.None, SourceCodeKind.Regular, defineConstantsArr), "File.cs");
+			var compilation = CSharpCompilation.Create("Test", new[] { syntaxTree }, references, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+			var diagnostics = string.Join(Environment.NewLine, compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.GetMessage()));
+			if (!string.IsNullOrEmpty(diagnostics))
+				Assert.Fail("Errors in source:" + Environment.NewLine + diagnostics);
+			return compilation;
+		}
 
 		private Tuple<JsClass, MockErrorReporter> Compile(string source, bool expectErrors = false) {
-			var sourceFile = new MockSourceFile("file.cs", source);
 			var er = new MockErrorReporter(!expectErrors);
 			var n = new Namer();
-			var references = new[] { Mscorlib, QUnit };
-			var compilation = PreparedCompilation.CreateCompilation("Test", new[] { sourceFile }, references, null);
-			var s = new AttributeStore(compilation.Compilation, er);
-			s.RunAttributeCode();
-			var md = new MetadataImporter(er, compilation.Compilation, s, new CompilerOptions());
-			var rtl = new RuntimeLibrary(md, er, compilation.Compilation, n, s);
-			md.Prepare(compilation.Compilation.GetAllTypeDefinitions());
+			var compilation = CreateCompilation(source);
+			var s = new AttributeStore(compilation, er, new IAutomaticMetadataAttributeApplier[0]);
+			var md = new MetadataImporter(new ReferenceMetadataImporter(er), er, compilation, s, new CompilerOptions());
+			var rtl = new RuntimeLibrary(md, er, compilation, n, s);
+			md.Prepare(compilation.GetAllTypes());
 			var compiler = new Compiler(md, n, rtl, er);
 
 			var result = compiler.Compile(compilation).ToList();
@@ -311,17 +322,17 @@ public class C1 {
 	}
 }", expectErrors: true);
 			Assert.That(res.Item2.AllMessages, Has.Count.EqualTo(1));
-			Assert.That(res.Item2.AllMessages.Any(m => m.Code == 7019 && m.FormattedMessage.Contains("C1") && m.FormattedMessage.Contains("TestFixtureAttribute") && m.FormattedMessage.Contains("runTests")));
+			Assert.That(res.Item2.AllMessages.Any(m => m.Code == "CS7019" && m.FormattedMessage.Contains("C1") && m.FormattedMessage.Contains("TestFixtureAttribute") && m.FormattedMessage.Contains("runTests")));
 		}
 
 		[NUnit.Framework.Test]
 		public void MethodWithTestAttributeMustBeAPublicNonGenericParameterInstanceMethodReturningVoid() {
-			var defs = new[] { "private void M()", "public int M()", "public void M<T>()", "public void M(int x)" };
+			var defs = new[] { "private void M() {}", "public int M() { return 0; }", "public void M<T>() {}", "public void M(int x) {}" };
 
 			foreach (var def in defs) {
-				var res = Compile("using QUnit; [TestFixture] public class C1 { [Test] " + def + " {} }", expectErrors: true);
+				var res = Compile("using QUnit; [TestFixture] public class C1 { [Test] " + def + " }", expectErrors: true);
 				Assert.That(res.Item2.AllMessages, Has.Count.EqualTo(1));
-				Assert.That(res.Item2.AllMessages.Any(m => m.Code == 7020));
+				Assert.That(res.Item2.AllMessages.Any(m => m.Code == "CS7020"));
 			}
 		}
     }
